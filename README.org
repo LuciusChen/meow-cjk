@@ -1,0 +1,154 @@
+* meow-cjk
+
+CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.com/meow-edit/meow][Meow]] modal editing.
+
+** Features
+
+- 🇨🇳 Intelligent CJK word segmentation
+- 🔄 Seamless integration with Meow
+- ⚡ Fast and accurate word boundaries
+- 🔌 Extensible backend system
+
+** Requirements
+
+- Emacs 27.1+
+- [[https://github.com/meow-edit/meow][Meow]] 1.0+
+- [[https://github.com/roife/emt][EMT]] 2.0.0+ (macOS only, for now)
+
+** Installation
+
+*** straight.el
+
+#+begin_src elisp
+(use-package emt
+  :straight (:host github :repo "roife/emt")
+  :config (emt-mode 1))
+
+(use-package meow-cjk
+  :straight (:host github :repo "LuciusChen/meow-cjk")
+  :after meow
+  :config (meow-cjk-mode 1))
+#+end_src
+
+*** package.el
+
+#+begin_src elisp
+;; Install EMT
+(unless (package-installed-p 'emt)
+  (package-vc-install "https://github.com/roife/emt"))
+
+;; Clone and load meow-cjk
+(add-to-list 'load-path "~/.emacs.d/site-lisp/meow-cjk")
+(require 'meow-cjk)
+(meow-cjk-mode 1)
+#+end_src
+
+** Doom Emacs
+
+#+begin_src elisp
+;; packages.el
+(package! emt :recipe (:host github :repo "roife/emt"))
+(package! meow-cjk :recipe (:host github :repo "LuciusChen/meow-cjk"))
+
+;; config.el
+(use-package! emt :config (emt-mode 1))
+(use-package! meow-cjk :after meow :config (meow-cjk-mode 1))
+#+end_src
+
+- Usage
+
+Enable ~meow-cjk-mode~ to enhance these Meow commands with CJK support:
+
+- ~meow-mark-word~ - Mark CJK words intelligently
+- ~meow-next-word~ - Jump to next CJK word
+- ~meow-back-word~ - Jump to previous CJK word
+
+/Under the hood:/ Works by advising ~meow-mark-thing~ and ~meow-next-thing~.
+
+** Example
+
+#+begin_example
+Text: 测试文本就是我
+      ^
+      cursor here
+
+meow-mark-word → selects "测试"
+meow-next-word → moves to "文本"
+#+end_example
+
+- Backends
+
+** EMT (macOS)
+
+Uses macOS's built-in NLP tokenizer.
+
+- ✅ Accurate and fast
+- ❌ macOS only
+
+** Planned
+
+- Jieba (cross-platform, Python-based)
+- cppjieba (cross-platform, C++)
+- mecab (Japanese)
+
+- Configuration
+
+#+begin_src elisp
+;; Basic
+(use-package meow-cjk
+  :after meow
+  :config (meow-cjk-mode 1))
+
+;; With performance tuning
+(use-package meow-cjk
+  :after meow
+  :custom
+  (emt-use-cache t)
+  (emt-cache-lru-size 200)
+  :config (meow-cjk-mode 1))
+#+end_src
+
+- Troubleshooting
+
+** EMT module not found
+
+#+begin_src elisp
+M-x emt-download-module  ; Download pre-built
+M-x emt-compile-module   ; Or compile (needs Xcode)
+#+end_src
+
+** Performance issues
+
+Increase cache:
+
+#+begin_src elisp
+(setq emt-cache-lru-size 200)
+#+end_src
+
+- Contributing
+
+Contributions welcome! To add a backend, implement:
+
+#+begin_src elisp
+(defun meow-cjk-BACKEND-forward-word (n) ...)
+(defun meow-cjk-BACKEND-backward-word (n) ...)
+(defun meow-cjk-BACKEND-split (text) ...)
+#+end_src
+
+- Roadmap
+
+- [X] EMT backend (macOS)
+- [ ] Jieba backend (Linux/Windows)
+- [ ] Auto backend detection
+- [ ] Integration tests
+
+- License
+
+GPL-3.0-or-later
+
+- Related
+
+- [[https://github.com/meow-edit/meow][Meow]] - Modal editing
+- [[https://github.com/roife/emt][EMT]] - macOS tokenizer
+- [[https://github.com/cute-jumper/evil-pinyin][evil-pinyin]] - Pinyin search
+- [[https://github.com/coldnew/pangu-spacing][pangu-spacing]] - CJK/English spacing
