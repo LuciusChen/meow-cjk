@@ -4,16 +4,16 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 
 ** Features
 
-- 🇨🇳 Intelligent CJK word segmentation
-- 🔄 Seamless integration with Meow
-- ⚡ Fast and accurate word boundaries
-- 🔌 Extensible backend system
+- Intelligent CJK word segmentation
+- Seamless integration with Meow
+- Fast and accurate word boundaries
+- Cross-platform (macOS/Linux/Windows)
 
 ** Requirements
 
 - Emacs 27.1+
 - [[https://github.com/meow-edit/meow][Meow]] 1.0+
-- [[https://github.com/roife/emt][EMT]] 2.0.0+ (macOS only, for now)
+- [[https://github.com/roife/emt][EMT]] 2.0.0+
 
 ** Installation
 
@@ -55,15 +55,17 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 (use-package! meow-cjk :after meow :config (meow-cjk-mode 1))
 #+end_src
 
-- Usage
+** Usage
 
 Enable ~meow-cjk-mode~ to enhance these Meow commands with CJK support:
 
-- ~meow-mark-word~ - Mark CJK words intelligently
-- ~meow-next-word~ - Jump to next CJK word
-- ~meow-back-word~ - Jump to previous CJK word
-
-/Under the hood:/ Works by advising ~meow-mark-thing~ and ~meow-next-thing~.
+| User command              | Advised internal       | Description                                          |
+|---------------------------+------------------------+------------------------------------------------------|
+| ~meow-mark-word~          | ~meow-mark-thing~      | Mark CJK word under cursor (expandable selection)    |
+| ~meow-next-word~          | ~meow-next-thing~      | Select to end of next CJK word                       |
+| ~meow-back-word~          | ~meow-next-thing~      | Select to beginning of previous CJK word             |
+| ~meow-kill-word~          | ~meow-kill-word~       | Kill forward to CJK word boundary (~M-d~ in INSERT)  |
+| ~meow-backward-kill-word~ | ~meow-kill-word~       | Kill backward to CJK word boundary (~M-DEL~ in INSERT) |
 
 ** Example
 
@@ -74,16 +76,17 @@ Text: 测试文本就是我
 
 meow-mark-word → selects "测试"
 meow-next-word → moves to "文本"
+meow-kill-word → kills "测试"
 #+end_example
 
 - Backends
 
-** EMT (macOS)
+** EMT (cross-platform via ewt-rs)
 
-Uses macOS's built-in NLP tokenizer.
+Uses ewt-rs, which delegates to the platform's native NLP tokenizer:
 
-- ✅ Accurate and fast
-- ❌ macOS only
+- macOS/Linux: ICU tokenizer
+- Windows: WinRT or ICU tokenizer
 
 ** Planned
 
@@ -114,7 +117,7 @@ Uses macOS's built-in NLP tokenizer.
 
 #+begin_src elisp
 M-x emt-download-module  ; Download pre-built
-M-x emt-compile-module   ; Or compile (needs Xcode)
+M-x emt-compile-module   ; Or compile from source
 #+end_src
 
 ** Performance issues
@@ -135,13 +138,6 @@ Contributions welcome! To add a backend, implement:
 (defun meow-cjk-BACKEND-split (text) ...)
 #+end_src
 
-- Roadmap
-
-- [X] EMT backend (macOS)
-- [ ] Jieba backend (Linux/Windows)
-- [ ] Auto backend detection
-- [ ] Integration tests
-
 - License
 
 GPL-3.0-or-later
@@ -149,6 +145,6 @@ GPL-3.0-or-later
 - Related
 
 - [[https://github.com/meow-edit/meow][Meow]] - Modal editing
-- [[https://github.com/roife/emt][EMT]] - macOS tokenizer
+- [[https://github.com/roife/emt][EMT]] - Cross-platform tokenizer via ewt-rs
 - [[https://github.com/cute-jumper/evil-pinyin][evil-pinyin]] - Pinyin search
 - [[https://github.com/coldnew/pangu-spacing][pangu-spacing]] - CJK/English spacing

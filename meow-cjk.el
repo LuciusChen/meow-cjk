@@ -43,6 +43,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'meow)
 (require 'emt)
 
@@ -66,17 +67,16 @@ Available backends:
 (defun meow-cjk--select-noncjk (thing type backward regexp-format)
   "Select non-CJK text based on THING, TYPE, and BACKWARD direction.
 REGEXP-FORMAT is used to format the search regexp."
-  (let* ((bounds (bounds-of-thing-at-point thing))
-         (beg (car bounds))
-         (end (cdr bounds)))
-    (when beg
-      (thread-first
-        (meow--make-selection (cons 'expand type) beg end)
-        (meow--select t backward))
-      (when (stringp regexp-format)
-        (let ((search (format regexp-format (regexp-quote (buffer-substring-no-properties beg end)))))
-          (meow--push-search search)
-          (meow--highlight-regexp-in-buffer search))))))
+  (when-let* ((bounds (bounds-of-thing-at-point thing))
+              (beg (car bounds))
+              (end (cdr bounds)))
+    (thread-first
+      (meow--make-selection (cons 'expand type) beg end)
+      (meow--select t backward))
+    (when (stringp regexp-format)
+      (let ((search (format regexp-format (regexp-quote (buffer-substring-no-properties beg end)))))
+        (meow--push-search search)
+        (meow--highlight-regexp-in-buffer search)))))
 
 (defun meow-cjk--select-cjk (direction backward)
   "Select CJK text based on DIRECTION and BACKWARD direction."
@@ -87,19 +87,20 @@ REGEXP-FORMAT is used to format the search regexp."
          (text (buffer-substring-no-properties beg end))
          (segments (append (emt-split text) nil))
          (pos (- (point) beg))
-         (segment-bounds (car segments)))
-    (dolist (bound segments)
-      (when (and (>= pos (car bound)) (< pos (cdr bound)))
-        (setq segment-bounds bound)))
+         (segment-bounds (or (cl-loop for bound in segments
+                                      when (and (>= pos (car bound))
+                                                (< pos (cdr bound)))
+                                      return bound)
+                             (car segments))))
     (when segment-bounds
       (let* ((seg-beg (+ beg (car segment-bounds)))
              (seg-end (+ beg (cdr segment-bounds)))
-             (segment-text (buffer-substring-no-properties seg-beg seg-end))
-             (regexp (regexp-quote segment-text)))
-        (let ((selection (meow--make-selection (cons 'expand 'word) seg-beg seg-end)))
-          (meow--select selection t backward)
-          (meow--push-search regexp)
-          (meow--highlight-regexp-in-buffer regexp))))))
+             (regexp (regexp-quote (buffer-substring-no-properties seg-beg seg-end))))
+        (meow--select
+         (meow--make-selection (cons 'expand 'word) seg-beg seg-end)
+         t backward)
+        (meow--push-search regexp)
+        (meow--highlight-regexp-in-buffer regexp)))))
 
 (defun meow-cjk--forward-thing-1 (thing)
   "Move forward one THING, with CJK support."
@@ -107,7 +108,7 @@ REGEXP-FORMAT is used to format the search regexp."
     (if (eq thing 'word)
         (emt-forward-word 1)
       (forward-thing thing 1))
-    (when (not (= pos (point)))
+    (unless (= pos (point))
       (meow--hack-cursor-pos (point)))))
 
 (defun meow-cjk--backward-thing-1 (thing)
@@ -116,7 +117,7 @@ REGEXP-FORMAT is used to format the search regexp."
     (if (eq thing 'word)
         (emt-backward-word 1)
       (forward-thing thing -1))
-    (when (not (= pos (point)))
+    (unless (= pos (point))
       (point))))
 
 ;;; Public API
@@ -139,11 +140,10 @@ format-string to format the regexp-quoted selection content (which is passed as
 a string to `format'). Further matches of this formatted search will be
 highlighted in the buffer."
   (interactive "p")
-  ;; Ensure that EMT is loaded
-  (emt-ensure)
   (let ((direction (if backward 'backward 'forward)))
     (if (or (eq type 'symbol) (not (looking-at-p "\\cc")))
         (meow-cjk--select-noncjk thing type backward regexp-format)
+      (emt-ensure)
       (meow-cjk--select-cjk direction backward))))
 
 ;;;###autoload
@@ -190,6 +190,34 @@ INCLUDE-SYNTAX specifies additional syntax to include in the selection."
        (cons (apply-partially #'meow-cjk--backward-thing-1 thing)
              (apply-partially #'meow-cjk--forward-thing-1 thing))))))
 
+;;;###autoload
+(defun meow-cjk-kill-word (arg)
+  "Kill characters until word boundary, with CJK support.
+ARG determines direction and count: positive kills forward, negative kills backward.
+`meow-backward-kill-word' calls this with a negative ARG."
+  (interactive "p")
+  (let* ((backward (< arg 0))
+         (at-cjk (if backward
+                     (when-let* ((c (char-before)))
+                       (string-match-p "\\cc" (string c)))
+                   (looking-at-p "\\cc"))))
+    (if at-cjk
+        (progn
+          (emt-ensure)
+          (let ((start (point))
+                (end (progn
+                       (if backward
+                           (emt-backward-word (- arg))
+                         (emt-forward-word arg))
+                       (point))))
+            (condition-case _
+                (kill-region start end)
+              ((text-read-only buffer-read-only)
+               (condition-case err
+                   (meow--delete-region start end)
+                 (t (signal (car err) (cdr err))))))))
+      (meow-kill-thing meow-word-thing arg))))
+
 ;;; Minor mode
 
 ;;;###autoload
@@ -199,14 +227,13 @@ INCLUDE-SYNTAX specifies additional syntax to include in the selection."
   :lighter " MeowCJK"
   (if meow-cjk-mode
       (progn
-        ;; Ensure EMT is loaded
         (emt-ensure)
-        ;; Advise meow functions
         (advice-add 'meow-mark-thing :override #'meow-cjk-mark-thing)
-        (advice-add 'meow-next-thing :override #'meow-cjk-next-thing))
-    ;; Remove advice when disabled
+        (advice-add 'meow-next-thing :override #'meow-cjk-next-thing)
+        (advice-add 'meow-kill-word  :override #'meow-cjk-kill-word))
     (advice-remove 'meow-mark-thing #'meow-cjk-mark-thing)
-    (advice-remove 'meow-next-thing #'meow-cjk-next-thing)))
+    (advice-remove 'meow-next-thing #'meow-cjk-next-thing)
+    (advice-remove 'meow-kill-word  #'meow-cjk-kill-word)))
 
 (provide 'meow-cjk)
 
