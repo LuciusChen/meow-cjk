@@ -59,13 +59,14 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 
 Enable ~meow-cjk-mode~ to enhance these Meow commands with CJK support:
 
-| User command              | Advised internal       | Description                                          |
-|---------------------------+------------------------+------------------------------------------------------|
-| ~meow-mark-word~          | ~meow-mark-thing~      | Mark CJK word under cursor (expandable selection)    |
-| ~meow-next-word~          | ~meow-next-thing~      | Select to end of next CJK word                       |
-| ~meow-back-word~          | ~meow-next-thing~      | Select to beginning of previous CJK word             |
-| ~meow-kill-word~          | ~meow-kill-word~       | Kill forward to CJK word boundary (~M-d~ in INSERT)  |
-| ~meow-backward-kill-word~ | ~meow-kill-word~       | Kill backward to CJK word boundary (~M-DEL~ in INSERT) |
+| User command     | Advised internal  | Description                                       |
+|------------------+-------------------+---------------------------------------------------|
+| ~meow-mark-word~ | ~meow-mark-thing~ | Mark CJK word under cursor (expandable selection) |
+| ~meow-next-word~ | ~meow-next-thing~ | Select to end of next CJK word                    |
+| ~meow-back-word~ | ~meow-next-thing~ | Select to beginning of previous CJK word          |
+
+For CJK-aware ~kill-word~ / ~backward-kill-word~, use [[https://github.com/LuciusChen/emt][EMT]]'s built-in remap:
+~emt-mode~ automatically remaps ~kill-word~ → ~emt-kill-word~ and ~backward-kill-word~ → ~emt-backward-kill-word~.
 
 ** Example
 
@@ -76,7 +77,6 @@ Text: 测试文本就是我
 
 meow-mark-word → selects "测试"
 meow-next-word → moves to "文本"
-meow-kill-word → kills "测试"
 #+end_example
 
 - Backends

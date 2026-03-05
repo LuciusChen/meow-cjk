@@ -190,34 +190,6 @@ INCLUDE-SYNTAX specifies additional syntax to include in the selection."
        (cons (apply-partially #'meow-cjk--backward-thing-1 thing)
              (apply-partially #'meow-cjk--forward-thing-1 thing))))))
 
-;;;###autoload
-(defun meow-cjk-kill-word (arg)
-  "Kill characters until word boundary, with CJK support.
-ARG determines direction and count: positive kills forward, negative kills backward.
-`meow-backward-kill-word' calls this with a negative ARG."
-  (interactive "p")
-  (let* ((backward (< arg 0))
-         (at-cjk (if backward
-                     (when-let* ((c (char-before)))
-                       (string-match-p "\\cc" (string c)))
-                   (looking-at-p "\\cc"))))
-    (if at-cjk
-        (progn
-          (emt-ensure)
-          (let ((start (point))
-                (end (progn
-                       (if backward
-                           (emt-backward-word (- arg))
-                         (emt-forward-word arg))
-                       (point))))
-            (condition-case _
-                (kill-region start end)
-              ((text-read-only buffer-read-only)
-               (condition-case err
-                   (meow--delete-region start end)
-                 (t (signal (car err) (cdr err))))))))
-      (meow-kill-thing meow-word-thing arg))))
-
 ;;; Minor mode
 
 ;;;###autoload
@@ -229,11 +201,9 @@ ARG determines direction and count: positive kills forward, negative kills backw
       (progn
         (emt-ensure)
         (advice-add 'meow-mark-thing :override #'meow-cjk-mark-thing)
-        (advice-add 'meow-next-thing :override #'meow-cjk-next-thing)
-        (advice-add 'meow-kill-word  :override #'meow-cjk-kill-word))
+        (advice-add 'meow-next-thing :override #'meow-cjk-next-thing))
     (advice-remove 'meow-mark-thing #'meow-cjk-mark-thing)
-    (advice-remove 'meow-next-thing #'meow-cjk-next-thing)
-    (advice-remove 'meow-kill-word  #'meow-cjk-kill-word)))
+    (advice-remove 'meow-next-thing #'meow-cjk-next-thing)))
 
 (provide 'meow-cjk)
 
