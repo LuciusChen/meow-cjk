@@ -3,7 +3,7 @@
 ;; Copyright (C) 2024
 
 ;; Author: Lucius Chen <chenyh572@gmail.com>
-;; URL: https://github.com/yourusername/meow-cjk
+;; URL: https://github.com/LuciusChen/meow-cjk
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "27.1"))
 ;; Keywords: chinese, cjk, japanese, korean, convenience, meow
@@ -26,8 +26,8 @@
 ;;; Commentary:
 
 ;; This package provides CJK word segmentation support for Meow modal editing.
-;; Currently supports EMT backend for macOS, with plans to support additional
-;; backends for Linux and Windows.
+;; Supports EMT backend powered by ewt-rs, which works on all platforms
+;; (macOS/Linux via ICU, Windows via WinRT or ICU).
 ;;
 ;; Usage:
 ;;
@@ -56,8 +56,9 @@
 (defcustom meow-cjk-backend 'emt
   "Backend for CJK word segmentation.
 Available backends:
-  - `emt': EMT (macOS only, requires EMT package)"
-  :type '(choice (const :tag "EMT (macOS)" emt))
+  - `emt': EMT backend powered by ewt-rs (cross-platform: macOS/Linux via ICU,
+           Windows via WinRT or ICU).  Requires the EMT package."
+  :type '(choice (const :tag "EMT (cross-platform via ewt-rs)" emt))
   :group 'meow-cjk)
 
 ;;; Helper functions
@@ -168,9 +169,9 @@ INCLUDE-SYNTAX specifies additional syntax to include in the selection."
          (new-type (if expand (cons 'expand type) (cons 'select type)))
          (m (point))
          (p (save-mark-and-excursion
-              (if (and (eq thing 'word) (eq system-type 'darwin))
+              (if (eq thing 'word)
                   (progn
-                    (emt-ensure) ;; Ensure EMT is loaded
+                    (emt-ensure)
                     (if (> n 0)
                         (emt-forward-word n)
                       (emt-backward-word (- n))))
@@ -190,12 +191,6 @@ INCLUDE-SYNTAX specifies additional syntax to include in the selection."
              (apply-partially #'meow-cjk--forward-thing-1 thing))))))
 
 ;;; Minor mode
-
-(defvar meow-cjk--original-mark-thing nil
-  "Original `meow-mark-thing' function.")
-
-(defvar meow-cjk--original-next-thing nil
-  "Original `meow-next-thing' function.")
 
 ;;;###autoload
 (define-minor-mode meow-cjk-mode
