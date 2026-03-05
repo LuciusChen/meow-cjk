@@ -13,7 +13,7 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 
 - Emacs 27.1+
 - [[https://github.com/meow-edit/meow][Meow]] 1.0+
-- [[https://github.com/roife/emt][EMT]] 2.0.0+
+- [[https://github.com/LuciusChen/emt][EMT]] 2.0.0+ (fork with pre-built binaries for all platforms)
 
 ** Installation
 
@@ -21,7 +21,7 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 
 #+begin_src elisp
 (use-package emt
-  :straight (:host github :repo "roife/emt")
+  :straight (:host github :repo "LuciusChen/emt")
   :config (emt-mode 1))
 
 (use-package meow-cjk
@@ -35,7 +35,7 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 #+begin_src elisp
 ;; Install EMT
 (unless (package-installed-p 'emt)
-  (package-vc-install "https://github.com/roife/emt"))
+  (package-vc-install "https://github.com/LuciusChen/emt"))
 
 ;; Clone and load meow-cjk
 (add-to-list 'load-path "~/.emacs.d/site-lisp/meow-cjk")
@@ -47,7 +47,7 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 
 #+begin_src elisp
 ;; packages.el
-(package! emt :recipe (:host github :repo "roife/emt"))
+(package! emt :recipe (:host github :repo "LuciusChen/emt"))
 (package! meow-cjk :recipe (:host github :repo "LuciusChen/meow-cjk"))
 
 ;; config.el
@@ -145,6 +145,6 @@ GPL-3.0-or-later
 - Related
 
 - [[https://github.com/meow-edit/meow][Meow]] - Modal editing
-- [[https://github.com/roife/emt][EMT]] - Cross-platform tokenizer via ewt-rs
+- [[https://github.com/LuciusChen/emt][EMT]] - Cross-platform tokenizer via ewt-rs (fork with pre-built binaries)
 - [[https://github.com/cute-jumper/evil-pinyin][evil-pinyin]] - Pinyin search
 - [[https://github.com/coldnew/pangu-spacing][pangu-spacing]] - CJK/English spacing
