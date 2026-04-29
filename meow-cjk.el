@@ -199,7 +199,6 @@ INCLUDE-SYNTAX specifies additional syntax to include in the selection."
   :lighter " MeowCJK"
   (if meow-cjk-mode
       (progn
-        (emt-ensure)
         (advice-add 'meow-mark-thing :override #'meow-cjk-mark-thing)
         (advice-add 'meow-next-thing :override #'meow-cjk-next-thing))
     (advice-remove 'meow-mark-thing #'meow-cjk-mark-thing)
