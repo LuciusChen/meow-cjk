@@ -1,12 +1,12 @@
-;;; meow-cjk.el --- CJK word segmentation support for Meow  -*- lexical-binding: t; -*-
+;;; meow-cjk.el --- Han word segmentation support for Meow  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024
 
 ;; Author: Lucius Chen <chenyh572@gmail.com>
 ;; URL: https://github.com/LuciusChen/meow-cjk
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "27.1"))
-;; Keywords: chinese, cjk, japanese, korean, convenience, meow
+;; Package-Requires: ((emacs "27.1") (meow "1.5.0") (emt "0.1.1"))
+;; Keywords: chinese, cjk, convenience, meow
 
 ;; This file is NOT a part of GNU Emacs.
 
@@ -25,9 +25,8 @@
 
 ;;; Commentary:
 
-;; This package provides CJK word segmentation support for Meow modal editing.
-;; Supports EMT backend powered by ewt-rs, which works on all platforms
-;; (macOS/Linux via ICU, Windows via WinRT or ICU).
+;; This package provides Han word segmentation support for Meow modal editing.
+;; It uses the EMT backend, which is backed by jieba-rs.
 ;;
 ;; Usage:
 ;;
@@ -44,28 +43,28 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'subr-x)
 (require 'meow)
 (require 'emt)
 
 ;;; Customization
 
 (defgroup meow-cjk nil
-  "CJK word segmentation support for Meow."
+  "Han word segmentation support for Meow."
   :group 'meow
   :prefix "meow-cjk-")
 
 (defcustom meow-cjk-backend 'emt
-  "Backend for CJK word segmentation.
+  "Backend for Han word segmentation.
 Available backends:
-  - `emt': EMT backend powered by ewt-rs (cross-platform: macOS/Linux via ICU,
-           Windows via WinRT or ICU).  Requires the EMT package."
-  :type '(choice (const :tag "EMT (cross-platform via ewt-rs)" emt))
+  - `emt': EMT backend powered by jieba-rs.  Requires the EMT package."
+  :type '(choice (const :tag "EMT (jieba-rs)" emt))
   :group 'meow-cjk)
 
 ;;; Helper functions
 
 (defun meow-cjk--select-noncjk (thing type backward regexp-format)
-  "Select non-CJK text based on THING, TYPE, and BACKWARD direction.
+  "Select non-Han text based on THING, TYPE, and BACKWARD direction.
 REGEXP-FORMAT is used to format the search regexp."
   (when-let* ((bounds (bounds-of-thing-at-point thing))
               (beg (car bounds))
@@ -79,28 +78,18 @@ REGEXP-FORMAT is used to format the search regexp."
         (meow--highlight-regexp-in-buffer search)))))
 
 (defun meow-cjk--select-cjk (direction backward)
-  "Select CJK text based on DIRECTION and BACKWARD direction."
-  (let* ((bounds (emt--get-bounds-at-point
-                  (emt--move-by-word-decide-bounds-direction direction)))
-         (beg (car bounds))
-         (end (cdr bounds))
-         (text (buffer-substring-no-properties beg end))
-         (segments (append (emt-split text) nil))
-         (pos (- (point) beg))
-         (segment-bounds (or (cl-loop for bound in segments
-                                      when (and (>= pos (car bound))
-                                                (< pos (cdr bound)))
-                                      return bound)
-                             (car segments))))
-    (when segment-bounds
-      (let* ((seg-beg (+ beg (car segment-bounds)))
-             (seg-end (+ beg (cdr segment-bounds)))
-             (regexp (regexp-quote (buffer-substring-no-properties seg-beg seg-end))))
-        (meow--select
-         (meow--make-selection (cons 'expand 'word) seg-beg seg-end)
-         t backward)
-        (meow--push-search regexp)
-        (meow--highlight-regexp-in-buffer regexp)))))
+  "Select Han text based on DIRECTION and BACKWARD direction."
+  (when-let* ((bounds (if (eq direction 'backward)
+                          (emt-bounds-at-point-or-backward)
+                        (emt-bounds-at-point-or-forward)))
+              (beg (car bounds))
+              (end (cdr bounds))
+              (regexp (regexp-quote (buffer-substring-no-properties beg end))))
+    (meow--select
+     (meow--make-selection (cons 'expand 'word) beg end)
+     t backward)
+    (meow--push-search regexp)
+    (meow--highlight-regexp-in-buffer regexp)))
 
 (defun meow-cjk--forward-thing-1 (thing)
   "Move forward one THING, with CJK support."

@@ -1,19 +1,19 @@
 * meow-cjk
 
-CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.com/meow-edit/meow][Meow]] modal editing.
+Han word segmentation support for [[https://github.com/meow-edit/meow][Meow]] modal editing.
 
 ** Features
 
-- Intelligent CJK word segmentation
-- Seamless integration with Meow
-- Fast and accurate word boundaries
-- Cross-platform (macOS/Linux/Windows)
+- Han word selection and movement for Meow word commands
+- EMT backend backed by [[https://github.com/messense/jieba-rs][jieba-rs]]
+- Lazy module loading so startup is not blocked when the EMT module is missing
+- macOS, Linux, and Windows support through EMT's dynamic module
 
 ** Requirements
 
 - Emacs 27.1+
-- [[https://github.com/meow-edit/meow][Meow]] 1.0+
-- [[https://github.com/LuciusChen/emt][EMT]] 2.0.0+ (fork with pre-built binaries for all platforms)
+- [[https://github.com/meow-edit/meow][Meow]] 1.5.0+
+- [[https://github.com/LuciusChen/emt][EMT]] 0.1.1+
 
 ** Installation
 
@@ -21,130 +21,56 @@ CJK (Chinese, Japanese, Korean) word segmentation support for [[https://github.c
 
 #+begin_src elisp
 (use-package emt
-  :straight (:host github :repo "LuciusChen/emt")
-  :config (emt-mode 1))
+  :straight (:host github :repo "LuciusChen/emt"))
 
 (use-package meow-cjk
   :straight (:host github :repo "LuciusChen/meow-cjk")
   :after meow
-  :config (meow-cjk-mode 1))
+  :config
+  (meow-cjk-mode 1))
 #+end_src
 
 *** package.el
 
 #+begin_src elisp
-;; Install EMT
-(unless (package-installed-p 'emt)
-  (package-vc-install "https://github.com/LuciusChen/emt"))
+(package-vc-install "https://github.com/LuciusChen/emt")
+(package-vc-install "https://github.com/LuciusChen/meow-cjk")
 
-;; Clone and load meow-cjk
-(add-to-list 'load-path "~/.emacs.d/site-lisp/meow-cjk")
 (require 'meow-cjk)
 (meow-cjk-mode 1)
 #+end_src
 
-** Doom Emacs
-
-#+begin_src elisp
-;; packages.el
-(package! emt :recipe (:host github :repo "LuciusChen/emt"))
-(package! meow-cjk :recipe (:host github :repo "LuciusChen/meow-cjk"))
-
-;; config.el
-(use-package! emt :config (emt-mode 1))
-(use-package! meow-cjk :after meow :config (meow-cjk-mode 1))
-#+end_src
-
 ** Usage
 
-Enable ~meow-cjk-mode~ to enhance these Meow commands with CJK support:
+Enable =meow-cjk-mode= to make these Meow word commands use EMT's Han
+segmentation:
 
-| User command     | Advised internal  | Description                                       |
-|------------------+-------------------+---------------------------------------------------|
-| ~meow-mark-word~ | ~meow-mark-thing~ | Mark CJK word under cursor (expandable selection) |
-| ~meow-next-word~ | ~meow-next-thing~ | Select to end of next CJK word                    |
-| ~meow-back-word~ | ~meow-next-thing~ | Select to beginning of previous CJK word          |
+| User command     | Advised internal  | Description                                  |
+|------------------+-------------------+----------------------------------------------|
+| =meow-mark-word= | =meow-mark-thing= | Mark the Han word at point                   |
+| =meow-next-word= | =meow-next-thing= | Select to the end of the next Han word       |
+| =meow-back-word= | =meow-next-thing= | Select to the beginning of the previous word |
 
-For CJK-aware ~kill-word~ / ~backward-kill-word~, use [[https://github.com/LuciusChen/emt][EMT]]'s built-in remap:
-~emt-mode~ automatically remaps ~kill-word~ → ~emt-kill-word~ and ~backward-kill-word~ → ~emt-backward-kill-word~.
+** EMT Module
 
-** Example
-
-#+begin_example
-Text: 测试文本就是我
-      ^
-      cursor here
-
-meow-mark-word → selects "测试"
-meow-next-word → moves to "文本"
-#+end_example
-
-- Backends
-
-** EMT (cross-platform via ewt-rs)
-
-Uses ewt-rs, which delegates to the platform's native NLP tokenizer:
-
-- macOS/Linux: ICU tokenizer
-- Windows: WinRT or ICU tokenizer
-
-** Planned
-
-- Jieba (cross-platform, Python-based)
-- cppjieba (cross-platform, C++)
-- mecab (Japanese)
-
-- Configuration
+If the EMT dynamic module is missing, startup and =meow-cjk-mode= activation do
+not fail.  The first Han-aware command that needs segmentation will ask EMT to
+load the module.  Install the pre-built module with:
 
 #+begin_src elisp
-;; Basic
-(use-package meow-cjk
-  :after meow
-  :config (meow-cjk-mode 1))
-
-;; With performance tuning
-(use-package meow-cjk
-  :after meow
-  :custom
-  (emt-use-cache t)
-  (emt-cache-lru-size 200)
-  :config (meow-cjk-mode 1))
+M-x emt-download-module
 #+end_src
 
-- Troubleshooting
+** Limitations
 
-** EMT module not found
+This package is Han-focused because EMT uses jieba-rs.  It does not segment
+Japanese kana or Korean Hangul.
 
-#+begin_src elisp
-M-x emt-download-module  ; Download pre-built
-M-x emt-compile-module   ; Or compile from source
-#+end_src
-
-** Performance issues
-
-Increase cache:
-
-#+begin_src elisp
-(setq emt-cache-lru-size 200)
-#+end_src
-
-- Contributing
-
-Contributions welcome! To add a backend, implement:
-
-#+begin_src elisp
-(defun meow-cjk-BACKEND-forward-word (n) ...)
-(defun meow-cjk-BACKEND-backward-word (n) ...)
-(defun meow-cjk-BACKEND-split (text) ...)
-#+end_src
-
-- License
+** License
 
 GPL-3.0-or-later
 
-- Related
+** Related
 
 - [[https://github.com/meow-edit/meow][Meow]] - Modal editing
-- [[https://github.com/LuciusChen/emt][EMT]] - Cross-platform tokenizer via ewt-rs (fork with pre-built binaries)
-- [[https://github.com/cute-jumper/evil-pinyin][evil-pinyin]] - Pinyin search
-- [[https://github.com/coldnew/pangu-spacing][pangu-spacing]] - CJK/English spacing
+- [[https://github.com/LuciusChen/emt][EMT]] - Han word boundaries via jieba-rs
