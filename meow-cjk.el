@@ -5,7 +5,7 @@
 ;; Author: Lucius Chen <chenyh572@gmail.com>
 ;; URL: https://github.com/LuciusChen/meow-cjk
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "27.1") (meow "1.5.0") (emt "0.1.1"))
+;; Package-Requires: ((emacs "27.1") (meow "1.5.0") (emt "0.1.2"))
 ;; Keywords: chinese, cjk, convenience, meow
 
 ;; This file is NOT a part of GNU Emacs.

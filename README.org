@@ -13,7 +13,7 @@ Han word segmentation support for [[https://github.com/meow-edit/meow][Meow]] mo
 
 - Emacs 27.1+
 - [[https://github.com/meow-edit/meow][Meow]] 1.5.0+
-- [[https://github.com/LuciusChen/emt][EMT]] 0.1.1+
+- [[https://github.com/LuciusChen/emt][EMT]] 0.1.2+
 
 ** Installation
 
